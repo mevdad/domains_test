@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Notifications\Channels;
+
+use App\Contracts\DomainNotificationChannel;
+use App\Models\Domain;
+use App\Models\User;
+use App\Services\TelegramNotifier;
+
+class TelegramDomainChannel implements DomainNotificationChannel
+{
+    public function __construct(private TelegramNotifier $telegram) {}
+
+    public function channelName(): string
+    {
+        return 'telegram';
+    }
+
+    public function label(): string
+    {
+        return 'Telegram';
+    }
+
+    public function icon(): string
+    {
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="30px" height="30px" viewBox="-20 0 190 190" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M76.33 132.14L62.5 143.73L58.59 144.26L49.84 114.11L19.06 104L113.82 67.8799L118.29 67.9799L103.36 149.19L76.33 132.14ZM100.03 83.1399L56.61 109.17L61.61 130.5L62.98 130.19L68.2 113.73L102.9 83.4799L100.03 83.1399Z" fill="#000000"/></svg>';
+    }
+
+    public function configFields(): array
+    {
+        return [
+            [
+                'key' => 'bot_token',
+                'label' => 'Bot Token',
+                'type' => 'text',
+                'placeholder' => '123456789:ABCDEF...',
+            ],
+            [
+                'key' => 'chat_id',
+                'label' => 'Chat ID',
+                'type' => 'text',
+                'placeholder' => 'e.g. 123456789',
+            ],
+        ];
+    }
+
+    public function validationRules(): array
+    {
+        return [
+            'bot_token' => ['nullable', 'string', 'max:255'],
+            'chat_id' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    public function isConfiguredFor(User $user): bool
+    {
+        $config = $user->channelConfig('telegram');
+
+        return !empty($config['bot_token']) && !empty($config['chat_id']);
+    }
+
+    public function send(User $user, Domain $domain, bool $isUp): void
+    {
+        $config = $user->channelConfig('telegram');
+        $status = $isUp ? 'UP ✅' : 'DOWN ❌';
+
+        $this->telegram->send($config['bot_token'], $config['chat_id'], "Domain {$domain->name} is {$status}");
+    }
+}

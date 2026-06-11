@@ -1,0 +1,17 @@
+[Unit]
+Description=Laravel Queue Worker
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www
+ExecStart=/usr/bin/php artisan queue:work --queue=default --sleep=3 --tries=3 --max-time=3600
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=laravel-worker
+
+[Install]
+WantedBy=multi-user.target
