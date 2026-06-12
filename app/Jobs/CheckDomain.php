@@ -19,17 +19,20 @@ class CheckDomain implements ShouldQueue
     public function handle(): void
     {
         $start = microtime(true);
+        $method = strtoupper($this->domain->check_method);
         $isUp = false;
         $statusCode = null;
         $responseTimeMs = null;
+        $responseBody = null;
         $error = null;
 
         try {
             $response = Http::timeout($this->domain->check_timeout)
-                ->{strtolower($this->domain->check_method)}("https://{$this->domain->name}");
+                ->{strtolower($method)}("https://{$this->domain->name}");
             $isUp = $response->status() < 500;
             $statusCode = $response->status();
             $responseTimeMs = (int) round((microtime(true) - $start) * 1000);
+            $responseBody = $response->body();
         } catch (ConnectionException $e) {
             $error = $e->getMessage();
         } catch (Throwable $e) {
@@ -39,8 +42,10 @@ class CheckDomain implements ShouldQueue
         /** @var DomainCheck $check */
         $check = $this->domain->checks()->create([
             'is_up' => $isUp,
+            'method' => $method,
             'status_code' => $statusCode,
             'response_time_ms' => $responseTimeMs,
+            'response_body' => $responseBody,
             'error' => $error,
             'checked_at' => now(),
         ]);

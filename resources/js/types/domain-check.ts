@@ -11,8 +11,10 @@ export type DomainCheck = {
     id: number;
     domain_id: number;
     is_up: boolean;
+    method: string | null;
     status_code: number | null;
     response_time_ms: number | null;
+    response_body: string | null;
     error: string | null;
     checked_at: string;
     notifications?: DomainCheckNotification[];

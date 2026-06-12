@@ -62,7 +62,9 @@ class DomainCheckTest extends TestCase
         $this->assertDatabaseHas('domain_checks', [
             'domain_id' => $domain->id,
             'is_up' => true,
+            'method' => 'GET',
             'status_code' => 200,
+            'response_body' => 'ok',
         ]);
     }
 
@@ -107,7 +109,7 @@ class DomainCheckTest extends TestCase
         Queue::assertPushed(SendDomainNotification::class);
     }
 
-    public function test_notification_records_not_created_when_status_unchanged(): void
+    public function test_notification_records_created_when_status_unchanged(): void
     {
         Http::fake(['*' => Http::response('ok', 200)]);
         Queue::fake([SendDomainNotification::class]);
@@ -120,7 +122,15 @@ class DomainCheckTest extends TestCase
 
         (new CheckDomain($domain))->handle();
 
-        Queue::assertNotPushed(SendDomainNotification::class);
+        $latestCheck = DomainCheck::where('domain_id', $domain->id)->latest('checked_at')->first();
+
+        $this->assertDatabaseHas('domain_check_notifications', [
+            'domain_check_id' => $latestCheck->id,
+            'channel' => 'mail',
+            'status' => 'pending',
+        ]);
+
+        Queue::assertPushed(SendDomainNotification::class);
     }
 
     public function test_telegram_notification_record_not_created_when_not_configured(): void

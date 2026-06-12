@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronRight, Clock, XCircle } from 'lucide-react';
+import { Fragment, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { index as checksIndex } from '@/routes/domains/checks';
 import type { DomainCheck, DomainCheckNotification, Paginator } from '@/types';
@@ -32,6 +33,9 @@ type Props = {
 };
 
 export default function DomainCheckTable({ checks, enabledChannels, showDomain = false }: Props) {
+    const [expanded, setExpanded] = useState<number | null>(null);
+    const columnCount = 7 + (showDomain ? 1 : 0) + enabledChannels.length;
+
     return (
         <div className="space-y-4">
             <div className="overflow-hidden rounded-lg border border-border">
@@ -42,6 +46,7 @@ export default function DomainCheckTable({ checks, enabledChannels, showDomain =
                                 <th className="px-4 py-3">Date / Time</th>
                                 {showDomain && <th className="px-4 py-3">Domain</th>}
                                 <th className="px-4 py-3">Status</th>
+                                <th className="px-4 py-3">Method</th>
                                 <th className="px-4 py-3">Code</th>
                                 <th className="px-4 py-3">Response</th>
                                 <th className="px-4 py-3">Error</th>
@@ -53,49 +58,82 @@ export default function DomainCheckTable({ checks, enabledChannels, showDomain =
                                         />
                                     </th>
                                 ))}
+                                <th className="px-4 py-3">Body</th>
                             </tr>
                         </thead>
                         <tbody>
                             {checks.data.map((check) => (
-                                <tr key={check.id} className="border-b last:border-b-0 hover:bg-muted/30">
-                                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                                        {new Date(check.checked_at).toLocaleString()}
-                                    </td>
-                                    {showDomain && check.domain && (
+                                <Fragment key={check.id}>
+                                    <tr className="border-b last:border-b-0 hover:bg-muted/30">
+                                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                                            {new Date(check.checked_at).toLocaleString()}
+                                        </td>
+                                        {showDomain && check.domain && (
+                                            <td className="px-4 py-3">
+                                                <Link
+                                                    href={checksIndex(check.domain.id).url}
+                                                    className="font-medium hover:underline"
+                                                >
+                                                    {check.domain.name}
+                                                </Link>
+                                            </td>
+                                        )}
                                         <td className="px-4 py-3">
-                                            <Link
-                                                href={checksIndex(check.domain.id).url}
-                                                className="font-medium hover:underline"
+                                            <Badge
+                                                variant={check.is_up ? 'default' : 'destructive'}
+                                                className={check.is_up ? 'bg-green-500/15 text-green-700 border-green-500/30 dark:text-green-400' : ''}
                                             >
-                                                {check.domain.name}
-                                            </Link>
+                                                {check.is_up ? 'UP' : 'DOWN'}
+                                            </Badge>
                                         </td>
+                                        <td className="px-4 py-3 font-mono text-xs">
+                                            {check.method ?? '—'}
+                                        </td>
+                                        <td className="px-4 py-3 font-mono text-xs">
+                                            {check.status_code ?? '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-xs whitespace-nowrap">
+                                            {check.response_time_ms != null ? `${check.response_time_ms} ms` : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 max-w-xs truncate text-xs text-muted-foreground" title={check.error ?? undefined}>
+                                            {check.error ?? '—'}
+                                        </td>
+                                        {enabledChannels.map((ch) => (
+                                            <td key={ch.name} className="px-4 py-3">
+                                                <NotificationStatusIcon
+                                                    notification={check.notifications?.find((n) => n.channel === ch.name)}
+                                                />
+                                            </td>
+                                        ))}
+                                        <td className="px-4 py-3">
+                                            {check.response_body ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setExpanded(expanded === check.id ? null : check.id)}
+                                                    className="inline-flex items-center text-muted-foreground hover:text-foreground"
+                                                    aria-label="Toggle response body"
+                                                >
+                                                    {expanded === check.id ? (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronRight className="h-4 w-4" />
+                                                    )}
+                                                </button>
+                                            ) : (
+                                                <span className="text-muted-foreground">—</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                    {expanded === check.id && check.response_body && (
+                                        <tr className="border-b last:border-b-0 bg-muted/20">
+                                            <td colSpan={columnCount} className="px-4 py-3">
+                                                <pre className="max-h-96 overflow-auto rounded-md bg-background p-3 font-mono text-xs whitespace-pre-wrap break-all">
+                                                    {check.response_body}
+                                                </pre>
+                                            </td>
+                                        </tr>
                                     )}
-                                    <td className="px-4 py-3">
-                                        <Badge
-                                            variant={check.is_up ? 'default' : 'destructive'}
-                                            className={check.is_up ? 'bg-green-500/15 text-green-700 border-green-500/30 dark:text-green-400' : ''}
-                                        >
-                                            {check.is_up ? 'UP' : 'DOWN'}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-4 py-3 font-mono text-xs">
-                                        {check.status_code ?? '—'}
-                                    </td>
-                                    <td className="px-4 py-3 text-xs whitespace-nowrap">
-                                        {check.response_time_ms != null ? `${check.response_time_ms} ms` : '—'}
-                                    </td>
-                                    <td className="px-4 py-3 max-w-xs truncate text-xs text-muted-foreground" title={check.error ?? undefined}>
-                                        {check.error ?? '—'}
-                                    </td>
-                                    {enabledChannels.map((ch) => (
-                                        <td key={ch.name} className="px-4 py-3">
-                                            <NotificationStatusIcon
-                                                notification={check.notifications?.find((n) => n.channel === ch.name)}
-                                            />
-                                        </td>
-                                    ))}
-                                </tr>
+                                </Fragment>
                             ))}
                         </tbody>
                     </table>

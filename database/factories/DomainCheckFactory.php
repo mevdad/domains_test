@@ -23,8 +23,10 @@ class DomainCheckFactory extends Factory
         return [
             'domain_id' => Domain::factory(),
             'is_up' => $isUp,
+            'method' => fake()->randomElement(['GET', 'HEAD']),
             'status_code' => $isUp ? 200 : null,
             'response_time_ms' => $isUp ? fake()->numberBetween(50, 2000) : null,
+            'response_body' => $isUp ? fake()->randomHtml() : null,
             'error' => $isUp ? null : fake()->sentence(),
             'checked_at' => now(),
         ];
