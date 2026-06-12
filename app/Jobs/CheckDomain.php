@@ -32,7 +32,7 @@ class CheckDomain implements ShouldQueue
             $isUp = $response->status() < 500;
             $statusCode = $response->status();
             $responseTimeMs = (int) round((microtime(true) - $start) * 1000);
-            $responseBody = $response->body();
+            $responseBody = $this->normalizeToUtf8($response->body(), $response->header('Content-Type'));
         } catch (ConnectionException $e) {
             $error = $e->getMessage();
         } catch (Throwable $e) {
@@ -58,5 +58,32 @@ class CheckDomain implements ShouldQueue
                 SendDomainNotification::dispatch($record);
             }
         }
+    }
+
+    /**
+     * Convert a raw response body to valid UTF-8 so it can be stored safely.
+     *
+     * Pages served in a non-UTF-8 charset (e.g. Windows-1251) or containing
+     * malformed byte sequences would otherwise trigger a MySQL "Incorrect
+     * string value" error on the utf8mb4 column.
+     */
+    private function normalizeToUtf8(string $body, ?string $contentType): string
+    {
+        $sourceCharset = 'UTF-8';
+
+        if ($contentType !== null && preg_match('/charset=["\']?([\w-]+)/i', $contentType, $matches)) {
+            $sourceCharset = strtoupper($matches[1]);
+        }
+
+        if ($sourceCharset !== 'UTF-8') {
+            $converted = @mb_convert_encoding($body, 'UTF-8', $sourceCharset);
+
+            if ($converted !== false) {
+                $body = $converted;
+            }
+        }
+
+        // Strip any remaining invalid byte sequences to guarantee valid UTF-8.
+        return mb_convert_encoding($body, 'UTF-8', 'UTF-8');
     }
 }
