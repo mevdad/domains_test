@@ -7,7 +7,7 @@ services:
     volumes:
       - ./:/var/www/
       - ./_docker/nginx/conf.d/:/etc/nginx/conf.d/
-      - ./_docker/nginx/certs/:/etc/nginx/certs/
+      - /etc/letsencrypt/:/etc/nginx/certs/:ro
     container_name: app_nginx
     depends_on:
       - app
