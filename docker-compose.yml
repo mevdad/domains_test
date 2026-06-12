@@ -2,7 +2,7 @@ services:
   nginx:
     image: nginx:latest
     ports:
-      - "8000:80"
+      - "80:80"
     volumes:
       - ./:/var/www/
       - ./_docker/nginx/conf.d/:/etc/nginx/conf.d/
