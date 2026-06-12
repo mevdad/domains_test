@@ -3,9 +3,11 @@ services:
     image: nginx:latest
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./:/var/www/
       - ./_docker/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./_docker/nginx/certs/:/etc/nginx/certs/
     container_name: app_nginx
     depends_on:
       - app
