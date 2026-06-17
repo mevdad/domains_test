@@ -56,14 +56,18 @@
         /* Alert banners */
         .alert {
             border-radius: 10px;
-            padding: 14px 16px;
+            padding: 0 16px;
             font-size: 0.9rem;
-            display: none;
+            display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 24px;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            margin-bottom: 0;
+            transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.35s ease, margin-bottom 0.35s ease;
         }
-        .alert.show { display: flex; }
+        .alert.show { max-height: 100px; opacity: 1; padding: 14px 16px; margin-bottom: 24px; }
         .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
         .alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
 
@@ -135,15 +139,19 @@
         textarea { height: 120px; resize: vertical; min-height: 90px; }
 
         .error-msg {
-            display: none;
+            display: flex;
             align-items: center;
             gap: 5px;
-            margin-top: 6px;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
             font-size: 0.8rem;
             color: #dc2626;
             font-weight: 500;
+            transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
         }
-        .error-msg.show { display: flex; }
+        .error-msg.show { max-height: 40px; opacity: 1; margin-top: 6px; }
         .error-msg::before {
             content: '!';
             display: inline-flex;
@@ -192,6 +200,17 @@
             margin-right: 8px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+                align-items: flex-start;
+            }
+            .card {
+                border-radius: 0;
+                padding: 30px 25px;
+            }
+        }
     </style>
 </head>
 <body>
